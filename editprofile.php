@@ -1,31 +1,33 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Mismatch - Edit Profile</title>
-  <link rel="stylesheet" type="text/css" href="style.css" />
-</head>
-<body>
-  <h3>Mismatch - Edit Profile</h3>
-
 <?php
+  // Start the session
+  require_once('startsession.php');
+
+  // Insert the page header
+  $page_title = 'Edit Profile';
+  require_once('header.php');
+
   require_once('appvars.php');
   require_once('connectvars.php');
 
-  // Connect to the database
-  $dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
+  // Make sure the user is logged in before going any further.
+  if (!isset($_SESSION['user_id'])) {
+    echo '<p class="login">Please <a href="login.php">log in</a> to access this page.</p>';
+    exit();
+  }
+
+  // Show the navigation menu
+  require_once('navmenu.php');
 
   if (isset($_POST['submit'])) {
     // Grab the profile data from the POST
-    $first_name = mysqli_real_escape_string($dbc, trim($_POST['firstname']));
-    $last_name = mysqli_real_escape_string($dbc, trim($_POST['lastname']));
-    $gender = mysqli_real_escape_string($dbc, trim($_POST['gender']));
-    $birthdate = mysqli_real_escape_string($dbc, trim($_POST['birthdate']));
-    $city = mysqli_real_escape_string($dbc, trim($_POST['city']));
-    $state = mysqli_real_escape_string($dbc, trim($_POST['state']));
-    $old_picture = mysqli_real_escape_string($dbc, trim($_POST['old_picture']));
-    $new_picture = mysqli_real_escape_string($dbc, trim($_FILES['new_picture']['name']));
+    $first_name = mysql_real_escape_string(trim($_POST['firstname']));
+    $last_name = mysql_real_escape_string(trim($_POST['lastname']));
+    $gender = mysql_real_escape_string(trim($_POST['gender']));
+    $birthdate = mysql_real_escape_string(trim($_POST['birthdate']));
+    $city = mysql_real_escape_string(trim($_POST['city']));
+    $state = mysql_real_escape_string(trim($_POST['state']));
+    $old_picture = mysql_real_escape_string(trim($_POST['old_picture']));
+    $new_picture = mysql_real_escape_string(trim($_FILES['new_picture']['name']));
     $new_picture_type = $_FILES['new_picture']['type'];
     $new_picture_size = $_FILES['new_picture']['size']; 
     list($new_picture_width, $new_picture_height) = getimagesize($_FILES['new_picture']['tmp_name']);
@@ -35,7 +37,9 @@
     if (!empty($new_picture)) {
       if ((($new_picture_type == 'image/gif') || ($new_picture_type == 'image/jpeg') || ($new_picture_type == 'image/pjpeg') ||
         ($new_picture_type == 'image/png')) && ($new_picture_size > 0) && ($new_picture_size <= MM_MAXFILESIZE) &&
-        ($new_picture_width <= MM_MAXIMGWIDTH) && ($new_picture_height <= MM_MAXIMGHEIGHT)) {        if ($_FILES['file']['error'] == 0) {          // Move the file to the target upload folder
+        ($new_picture_width <= MM_MAXIMGWIDTH) && ($new_picture_height <= MM_MAXIMGHEIGHT)) {
+        if ($_FILES['new_picture']['error'] == 0) {
+          // Move the file to the target upload folder
           $target = MM_UPLOADPATH . basename($new_picture);
           if (move_uploaded_file($_FILES['new_picture']['tmp_name'], $target)) {
             // The new picture file move was successful, now make sure any old picture is deleted
@@ -49,11 +53,15 @@
             $error = true;
             echo '<p class="error">Sorry, there was a problem uploading your picture.</p>';
           }
-        }      }      else {
+        }
+      }
+      else {
         // The new picture file is not valid, so delete the temporary file and set the error flag
         @unlink($_FILES['new_picture']['tmp_name']);
-        $error = true;        echo '<p class="error">Your picture must be a GIF, JPEG, or PNG image file no greater than ' . (MM_MAXFILESIZE / 1024) .
-          ' KB and ' . MM_MAXIMGWIDTH . 'x' . MM_MAXIMGHEIGHT . ' pixels in size.</p>';      }
+        $error = true;
+        echo '<p class="error">Your picture must be a GIF, JPEG, or PNG image file no greater than ' . (MM_MAXFILESIZE / 1024) .
+          ' KB and ' . MM_MAXIMGWIDTH . 'x' . MM_MAXIMGHEIGHT . ' pixels in size.</p>';
+      }
     }
 
     // Update the profile data in the database
@@ -62,18 +70,18 @@
         // Only set the picture column if there is a new picture
         if (!empty($new_picture)) {
           $query = "UPDATE mismatch_user SET first_name = '$first_name', last_name = '$last_name', gender = '$gender', " .
-            " birthdate = '$birthdate', city = '$city', state = '$state', picture = '$new_picture' WHERE user_id = '$user_id'";
+            " birthdate = '$birthdate', city = '$city', state = '$state', picture = '$new_picture' WHERE user_id = '" . $_SESSION['user_id'] . "'";
         }
         else {
           $query = "UPDATE mismatch_user SET first_name = '$first_name', last_name = '$last_name', gender = '$gender', " .
-            " birthdate = '$birthdate', city = '$city', state = '$state' WHERE user_id = '$user_id'";
+            " birthdate = '$birthdate', city = '$city', state = '$state' WHERE user_id = '" . $_SESSION['user_id'] . "'";
         }
-        mysqli_query($dbc, $query);
+        mysql_query($query);
 
         // Confirm success with the user
         echo '<p>Your profile has been successfully updated. Would you like to <a href="viewprofile.php">view your profile</a>?</p>';
 
-        mysqli_close($dbc);
+        mysql_close($dbc);
         exit();
       }
       else {
@@ -83,9 +91,9 @@
   } // End of check for form submission
   else {
     // Grab the profile data from the database
-    $query = "SELECT first_name, last_name, gender, birthdate, city, state, picture FROM mismatch_user WHERE user_id = '$user_id'";
-    $data = mysqli_query($dbc, $query);
-    $row = mysqli_fetch_array($data);
+    $query = "SELECT first_name, last_name, gender, birthdate, city, state, picture FROM mismatch_user WHERE user_id = '" . $_SESSION['user_id'] . "'";
+    $data = mysql_query($query);
+    $row = mysql_fetch_array($data, MYSQL_ASSOC);
 
     if ($row != NULL) {
       $first_name = $row['first_name'];
@@ -101,7 +109,7 @@
     }
   }
 
-  mysqli_close($dbc);
+  mysql_close($dbc);
 ?>
 
   <form enctype="multipart/form-data" method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>">
@@ -132,5 +140,8 @@
     </fieldset>
     <input type="submit" value="Save Profile" name="submit" />
   </form>
-</body> 
-</html>
+
+<?php
+  // Insert the page footer
+  require_once('footer.php');
+?>

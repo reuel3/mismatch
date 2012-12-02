@@ -1,34 +1,35 @@
 <?php
-  require_once('login.php');
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <title>Mismatch - View Profile</title>
-  <link rel="stylesheet" type="text/css" href="style.css" />
-</head>
-<body>
-  <h3>Mismatch - View Profile</h3>
+  // Start the session
+  require_once('startsession.php');
 
-<?php
+  // Insert the page header
+  $page_title = 'View Profile';
+  require_once('header.php');
+
   require_once('appvars.php');
   require_once('connectvars.php');
 
+  // Make sure the user is logged in before going any further.
+  if (!isset($_SESSION['user_id'])) {
+    echo '<p class="login">Please <a href="login.php">log in</a> to access this page.</p>';
+    exit();
+  }
+
+  // Show the navigation menu
+  require_once('navmenu.php');
+
   // Grab the profile data from the database
   if (!isset($_GET['user_id'])) {
-    $query = "SELECT username, first_name, last_name, gender, birthdate, city, state, picture FROM mismatch_user WHERE user_id = '$user_id'";
+    $query = "SELECT username, first_name, last_name, gender, birthdate, city, state, picture FROM mismatch_user WHERE user_id = '" . $_SESSION['user_id'] . "'";
   }
   else {
     $query = "SELECT username, first_name, last_name, gender, birthdate, city, state, picture FROM mismatch_user WHERE user_id = '" . $_GET['user_id'] . "'";
   }
-  $data = mysql_query($query)
-    or die(mysql_error());
+  $data = mysql_query($query);
 
   if (mysql_num_rows($data) == 1) {
     // The user row was found so display the user data
-    $row = mysql_fetch_array($data);
+    $row = mysql_fetch_array($data, MYSQL_ASSOC);
     echo '<table>';
     if (!empty($row['username'])) {
       echo '<tr><td class="label">Username:</td><td>' . $row['username'] . '</td></tr>';
@@ -53,7 +54,7 @@
       echo '</td></tr>';
     }
     if (!empty($row['birthdate'])) {
-      if (!isset($_GET['user_id']) || ($user_id == $_GET['user_id'])) {
+      if (!isset($_GET['user_id']) || ($_SESSION['user_id'] == $_GET['user_id'])) {
         // Show the user their own birthdate
         echo '<tr><td class="label">Birthdate:</td><td>' . $row['birthdate'] . '</td></tr>';
       }
@@ -71,7 +72,7 @@
         '" alt="Profile Picture" /></td></tr>';
     }
     echo '</table>';
-    if (!isset($_GET['user_id']) || ($user_id == $_GET['user_id'])) {
+    if (!isset($_GET['user_id']) || ($_SESSION['user_id'] == $_GET['user_id'])) {
       echo '<p>Would you like to <a href="editprofile.php">edit your profile</a>?</p>';
     }
   } // End of check for a single row of user results
@@ -81,5 +82,8 @@
 
   mysql_close($dbc);
 ?>
-</body> 
-</html>
+
+<?php
+  // Insert the page footer
+  require_once('footer.php');
+?>
