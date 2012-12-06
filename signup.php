@@ -15,8 +15,8 @@
     if (!empty($username) && !empty($password1) && !empty($password2) && ($password1 == $password2)) {
       // Make sure someone isn't already registered using this username
       $query = "SELECT * FROM mismatch_user WHERE username = '$username'";
-      $data = mysqli_query($dbc, $query);
-      if (mysqli_num_rows($data) == 0) {
+      $data = mysql_query($query);
+      if (mysql_num_rows($data) == 0) {
         // The username is unique, so insert the data into the database
         $query = "INSERT INTO mismatch_user (username, password, join_date) VALUES ('$username', SHA('$password1'), NOW())";
         mysql_query($query);
