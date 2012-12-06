@@ -6,14 +6,11 @@
   require_once('appvars.php');
   require_once('connectvars.php');
 
-  // Connect to the database
-  $dbc = mysqli_connect(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
-
   if (isset($_POST['submit'])) {
     // Grab the profile data from the POST
-    $username = mysqli_real_escape_string($dbc, trim($_POST['username']));
-    $password1 = mysqli_real_escape_string($dbc, trim($_POST['password1']));
-    $password2 = mysqli_real_escape_string($dbc, trim($_POST['password2']));
+    $username = mysql_real_escape_string(trim($_POST['username']));
+    $password1 = mysql_real_escape_string(trim($_POST['password1']));
+    $password2 = mysql_real_escape_string(trim($_POST['password2']));
 
     if (!empty($username) && !empty($password1) && !empty($password2) && ($password1 == $password2)) {
       // Make sure someone isn't already registered using this username
@@ -22,12 +19,12 @@
       if (mysqli_num_rows($data) == 0) {
         // The username is unique, so insert the data into the database
         $query = "INSERT INTO mismatch_user (username, password, join_date) VALUES ('$username', SHA('$password1'), NOW())";
-        mysqli_query($dbc, $query);
+        mysql_query($query);
 
         // Confirm success with the user
         echo '<p>Your new account has been successfully created. You\'re now ready to <a href="login.php">log in</a>.</p>';
 
-        mysqli_close($dbc);
+        mysql_close($dbc);
         exit();
       }
       else {
@@ -41,7 +38,7 @@
     }
   }
 
-  mysqli_close($dbc);
+  mysql_close($dbc);
 ?>
 
   <p>Please enter your username and desired password to sign up to Mismatch.</p>
